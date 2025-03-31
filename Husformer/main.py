@@ -39,8 +39,10 @@ parser.add_argument('--attn_mask', action='store_false',
                     help='use attention mask for Transformer (default: true)')
 
 # Tuning
-parser.add_argument('--batch_size', type=int, default=1024, metavar='N',
-                    help='batch size (default: 1024)')
+# parser.add_argument('--batch_size', type=int, default=1024, metavar='N',
+                    # help='batch size (default: 1024)')
+parser.add_argument('--batch_size', type=int, default=128, metavar='N',
+                    help='batch size (default: 128)')
 parser.add_argument('--clip', type=float, default=0.8,
                     help='gradient clip value (default: 0.8)')
 parser.add_argument('--lr', type=float, default=2e-3,
@@ -74,6 +76,9 @@ use_cuda = False
 output_dim_dict = {
     'Husformer': 1
 }
+criterion_dict = {
+    'Husformer': 'CrossEntropyLoss'
+}
 
 
 torch.set_default_tensor_type('torch.FloatTensor')
@@ -99,6 +104,7 @@ test_loader = DataLoader(test_data, batch_size=args.batch_size, shuffle=True)
 print('Finish loading the data....')
 
 hyp_params = args
+print("train_data.get_dim():", train_data.get_dim())
 hyp_params.orig_d_m1, hyp_params.orig_d_m2, hyp_params.orig_d_m3,hyp_params.orig_d_m4 = train_data.get_dim()
 hyp_params.m1_len, hyp_params.m2_len, hyp_params.m3_len, hyp_params.m4_len = train_data.get_seq_len()
 hyp_params.layers = args.nlevels
@@ -109,10 +115,10 @@ hyp_params.batch_chunk = args.batch_chunk
 hyp_params.n_train, hyp_params.n_valid, hyp_params.n_test = len(train_data), len(valid_data), len(test_data)
 hyp_params.model = str.upper(args.model.strip())
 hyp_params.output_dim = output_dim_dict.get(dataset, 1)
+hyp_params.criterion = criterion_dict.get(dataset, 'L1Loss')
 
 if __name__ == '__main__':
     if args.eval:
         test = test.eval(hyp_params, test_loader)
     else:
         test_loss = train.initiate(hyp_params, train_loader, valid_loader, test_loader)
-
