@@ -115,9 +115,9 @@ def pkl_make(modality1,modality2,modality3,modality4,label,train_id,val_id,test_
     train['label'] = label_train
     
     valid['id'] = id_val
-    valid['modality3'] = modality1_val
-    valid['modality1'] = modality2_val
-    valid['modality2'] = modality3_val
+    valid['modality1'] = modality1_val
+    valid['modality2'] = modality2_val
+    valid['modality3'] = modality3_val
     valid['modality4'] = modality4_val
     valid['label'] = label_val
 
