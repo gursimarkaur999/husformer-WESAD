@@ -21,7 +21,7 @@ def initiate(hyp_params, train_loader, valid_loader, test_loader):
         model = model.cuda()
 
     optimizer = getattr(optim, hyp_params.optim)(model.parameters(), lr=hyp_params.lr)
-    criterion = focalloss()
+    criterion = getattr(nn, hyp_params.criterion)()
     scheduler = ReduceLROnPlateau(optimizer, mode='min', patience=hyp_params.when, factor=0.1, verbose=True)
     settings = {'model': model,
                 'optimizer': optimizer,
@@ -114,6 +114,7 @@ def train_model(settings, hyp_params, train_loader, valid_loader, test_loader):
                     with torch.cuda.device(0):
                         m1,m2,m3,m4,eval_attr = m1.cuda(),m2.cuda(),m3.cuda(),m4.cuda(),eval_attr.cuda()      
                 batch_size = m1.size(0)
+                print("batch_size", batch_size)
                 net = nn.DataParallel(model) if batch_size > 10 else model
                 preds, _ = net(m1,m2,m3,m4)
                 total_loss += criterion(preds, eval_attr).item() * batch_size
@@ -162,3 +163,4 @@ def train_model(settings, hyp_params, train_loader, valid_loader, test_loader):
 
     sys.stdout.flush()
     input('[Press Any Key to start another run]')
+
