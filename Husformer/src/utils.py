@@ -6,13 +6,15 @@ from src.dataset import Multimodal_Datasets
 
 def get_data(args, dataset, split='train'):
     data_path = os.path.join(args.data_path, dataset) + f'_{split}.dt'
+    print("Data path:", data_path)
     if not os.path.exists(data_path):
         print(f"  - Creating new {split} data")
         data = Multimodal_Datasets(args.data_path, dataset, split)
         torch.save(data, data_path)
     else:
         print(f"  - Found cached {split} data")
-        data = torch.load(data_path)
+        data = torch.load(data_path, weights_only=False)
+    print("Data", data)
     return data
 
 
@@ -35,8 +37,8 @@ def load_model(args, name=''):
 
 
 class focalloss(nn.Module):
-    def __init__(self, alpha=[0.1, 0.1, 0.8], gamma=3, reduction='mean'):
-        super(focalloss, self).__init__()
+    def _init_(self, alpha=[0.1, 0.1, 0.8], gamma=3, reduction='mean'):
+        super(focalloss, self)._init_()
         self.alpha = torch.tensor(alpha)
         self.gamma = gamma
         self.reduction = reduction
