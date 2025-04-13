@@ -32,7 +32,7 @@ def save_model(args, model, name=''):
 
 def load_model(args, name=''):
     name = save_load_name(args, name)
-    model = torch.load(f'output/{args.name}.pt')
+    model = torch.load(f'output/{args.name}.pt', weights_only=False)
     return model
 
 

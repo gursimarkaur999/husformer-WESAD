@@ -15,10 +15,8 @@ from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import accuracy_score, f1_score
 from src.eval_metrics import *
 
-
 def initiate(hyp_params, train_loader, valid_loader, test_loader):
     model = getattr(models, hyp_params.model+'Model')(hyp_params)
-
     if hyp_params.use_cuda:
         model = model.cuda()
 
@@ -36,7 +34,7 @@ def train_model(settings, hyp_params, train_loader, valid_loader, test_loader):
     optimizer = settings['optimizer']
     criterion = settings['criterion']
     scheduler = settings['scheduler']
-
+    
     def train(model, optimizer, criterion):
         epoch_loss = 0
         model.train()
@@ -45,14 +43,12 @@ def train_model(settings, hyp_params, train_loader, valid_loader, test_loader):
         start_time = time.time()
         mae_train2 = 0
         for i_batch, (batch_X, batch_Y, batch_META) in enumerate(train_loader):
-            sample_ind, m1,m2,m3 = batch_X
+            sample_ind, m1,m2,m3,m4 = batch_X
             eval_attr = batch_Y.squeeze(-1)   # if num of labels is 1
-            
             model.zero_grad()
             if hyp_params.use_cuda:
                 with torch.cuda.device(0):
-                    m1,m2,m3,eval_attr = m1.cuda(),m2.cuda(),m3.cuda(),eval_attr.cuda()
-            
+                    m1,m2,m3,m4,eval_attr = m1.cuda(),m2.cuda(),m3.cuda(),m4.cuda(),eval_attr.cuda()
             batch_size = m1.size(0)
             batch_chunk = hyp_params.batch_chunk
 
@@ -63,19 +59,20 @@ def train_model(settings, hyp_params, train_loader, valid_loader, test_loader):
                 m1_chunks = m1.chunk(batch_chunk, dim=0)
                 m2_chunks = m2.chunk(batch_chunk, dim=0)
                 m3_chunks = m3.chunk(batch_chunk, dim=0)
+                m4_chunks = m4.chunk(batch_chunk, dim=0)
                 eval_attr_chunks = eval_attr.chunk(batch_chunk, dim=0)
                 
                 for i in range(batch_chunk):
-                    m1_i, m2_i, m3_i = m1_chunks[i],m2_chunks[i],m3_chunks[i]
+                    m1_i, m2_i, m3_i, m4_i = m1_chunks[i],m2_chunks[i],m3_chunks[i],m4_chunks[i]
                     eval_attr_i = eval_attr_chunks[i]
-                    preds_i, hiddens_i = net(m1_i, m2_i, m3_i)
+                    preds_i, hiddens_i = net(m1_i, m2_i, m3_i, m4_i)
                     
                     raw_loss_i = criterion(preds_i, eval_attr_i) / batch_chunk
                     raw_loss += raw_loss_i
                     raw_loss_i.backward()
                 combined_loss = raw_loss 
             else:
-                preds, hiddens = net(m1,m2,m3)
+                preds, hiddens = net(m1,m2,m3,m4)
                 raw_loss = criterion(preds, eval_attr)
                 combined_loss = raw_loss 
                 combined_loss.backward()
@@ -110,15 +107,16 @@ def train_model(settings, hyp_params, train_loader, valid_loader, test_loader):
 
         with torch.no_grad():
             for i_batch, (batch_X, batch_Y, batch_META) in enumerate(loader):
-                sample_ind,m1,m2,m3 = batch_X
+                sample_ind,m1,m2,m3,m4 = batch_X
                 eval_attr = batch_Y.squeeze(dim=-1) # if num of labels is 1
             
                 if hyp_params.use_cuda:
                     with torch.cuda.device(0):
-                        m1,m2,m3,eval_attr = m1.cuda(),m2.cuda(),m3.cuda(),eval_attr.cuda()      
+                        m1,m2,m3,m4,eval_attr = m1.cuda(),m2.cuda(),m3.cuda(),m4.cuda(),eval_attr.cuda()      
                 batch_size = m1.size(0)
+                print("batch_size", batch_size)
                 net = nn.DataParallel(model) if batch_size > 10 else model
-                preds, _ = net(m1,m2,m3)
+                preds, _ = net(m1,m2,m3,m4)
                 total_loss += criterion(preds, eval_attr).item() * batch_size
 
                 # Collect the results into dictionary
@@ -165,3 +163,4 @@ def train_model(settings, hyp_params, train_loader, valid_loader, test_loader):
 
     sys.stdout.flush()
     input('[Press Any Key to start another run]')
+

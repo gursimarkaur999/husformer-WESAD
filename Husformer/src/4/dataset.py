@@ -20,25 +20,26 @@ class Multimodal_Datasets(Dataset):
         self.m1 = torch.tensor(dataset[split_type]['modality1'].astype(np.float32)).cpu().detach()
         self.m2 = torch.tensor(dataset[split_type]['modality2'].astype(np.float32)).cpu().detach()
         self.m3 = torch.tensor(dataset[split_type]['modality3'].astype(np.float32)).cpu().detach()
+        self.m4 = torch.tensor(dataset[split_type]['modality4'].astype(np.float32)).cpu().detach()
         self.labels = torch.tensor(dataset[split_type]['label'].astype(np.float32)).cpu().detach()
         self.meta = dataset[split_type]['id']
 
         self.data = data
         
-        self.n_modalities = 3
+        self.n_modalities = 4 
     def get_n_modalities(self):
         return self.n_modalities
     def get_seq_len(self):
-        return self.m1.shape[1], self.m2.shape[1], self.m3.shape[1]
+        return self.m1.shape[1], self.m2.shape[1], self.m3.shape[1],self.m4.shape[1]
     def get_dim(self):
-        return self.m1.shape[2], self.m2.shape[2], self.m3.shape[2]
+        return self.m1.shape[2], self.m2.shape[2], self.m3.shape[2],self.m4.shape[2]
     def get_lbl_info(self):
         # return number_of_labels, label_dim
         return self.labels.shape[1], self.labels.shape[2]
     def __len__(self):
         return len(self.labels)
     def __getitem__(self, index):
-        X = (index, self.m1[index], self.m2[index], self.m3[index])
+        X = (index, self.m1[index], self.m2[index], self.m3[index],self.m4[index])
         Y = self.labels[index]
         META = self.meta[index][0] 
         return X, Y, META        

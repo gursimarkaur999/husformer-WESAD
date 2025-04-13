@@ -3,10 +3,12 @@ import pickle
 import csv
 
 def data_ready(pkl2):
-    modality1 = pkl2[b'signal'][b'chest'][b'Resp']
-    modality2 = pkl2[b'signal'][b'wrist'][b'BVP']
-    modality3 = pkl2[b'signal'][b'chest'][b'ECG']
-    modality4 = pkl2[b'signal'][b'wrist'][b'EDA']
+
+    # modality1 = pkl2[b'signal'][b'wrist'][b'ACC']   # shape (3, n)
+    modality1 = pkl2[b'signal'][b'wrist'][b'BVP']   # shape (n,)
+    modality2 = pkl2[b'signal'][b'wrist'][b'EDA']
+    modality3 = pkl2[b'signal'][b'wrist'][b'TEMP']
+
     label = pkl2[b'label']
 
     modality11 = []
@@ -39,14 +41,41 @@ def data_ready(pkl2):
         elif label[i] == 7:
             label[i] =0
     
-    for j in range(0,modality1.shape[0],700):
-        modality11.append(modality1[j:j+700].reshape(50,14))
-        modality31.append(modality3[j:j+700].reshape(50,14))
+    for j in range(0,label.shape[0],700):
+        # modality11.append(modality1[j:j+700].reshape(50,14))
+        # modality31.append(modality3[j:j+700].reshape(50,14))
         label1.append(label[j:j+700])
-    for j in range(0,modality2.shape[0],64):
-        modality21.append(modality2[j:j+64].reshape(16,4))
-    for j in range(0,modality4.shape[0],4):
-        modality41.append(modality4[j:j+4].reshape(1,4))
+    for j in range(0,modality1.shape[0],64):
+        modality11.append(modality1[j:j+64].reshape(16,4))
+    for j in range(0,modality2.shape[0],4):
+        modality31.append(modality3[j:j+4].reshape(1,4))
+        modality21.append(modality2[j:j+4].reshape(1,4))
+
+    # ACC → 64 samples per 2 sec
+    # for j in range(0, modality1.shape[0], 64):
+    #     if j + 64 <= modality1.shape[0]:
+    #         modality11.append(modality1[j:j+64].reshape(3, 64))
+
+    # # BVP → 128 samples per 2 sec
+    # for j in range(0, modality1.shape[0], 128):
+    #     if j + 128 <= modality1.shape[0]:
+    #         modality11.append(modality1[j:j+128].reshape(16, 8))
+
+    # # EDA → 8 samples per 2 sec
+    # for j in range(0, modality2.shape[0], 8):
+    #     if j + 8 <= modality2.shape[0]:
+    #         modality21.append(modality2[j:j+8].reshape(1, 8))
+
+    # # TEMP → 8 samples per 2 sec
+    # for j in range(0, modality3.shape[0], 8):
+    #     if j + 8 <= modality3.shape[0]:
+    #         modality31.append(modality3[j:j+8].reshape(1, 8))
+
+    # # Labels (assume synced with highest frequency: BVP 64Hz or ACC 32Hz)
+    # for j in range(0, label.shape[0], 64):  # Adjust this to match the dominant length (e.g. ACC)
+    #     if j + 64 <= label.shape[0]:
+    #         label1.append(label[j:j+64])
+
     invalid_index = []
     for k in range(len(label1)):
         b = list(set(label1[k]))
@@ -57,7 +86,7 @@ def data_ready(pkl2):
         modality11.pop(x)
         modality21.pop(x)
         modality31.pop(x)
-        modality41.pop(x)
+        # modality41.pop(x)
         label1.pop(x)
     label_new = []
     zeros = []
@@ -71,7 +100,7 @@ def data_ready(pkl2):
         modality12.append(modality11[x])
         modality22.append(modality21[x])
         modality32.append(modality31[x])
-        modality42.append(modality41[x])
+        # modality42.append(modality41[x])
         label2.append(label_new[x])
     index = len(modality12)
     return modality12,modality22,modality32,modality42,label2,index
@@ -90,9 +119,9 @@ def pkl_make(modality1,modality2,modality3,modality4,label,train_id,val_id,test_
     modality3_val = np.array(modality3)[val_id]
     modality3_test = np.array(modality3)[test_id]
 
-    modality4_train = np.array(modality4)[train_id]
-    modality4_val = np.array(modality4)[val_id]
-    modality4_test = np.array(modality4)[test_id]
+    # modality4_train = np.array(modality4)[train_id]
+    # modality4_val = np.array(modality4)[val_id]
+    # modality4_test = np.array(modality4)[test_id]
 
     id_train = np.arange(train_id.shape[0]).reshape(train_id.shape[0],1,1)
     id_val = np.arange(val_id.shape[0]).reshape(val_id.shape[0],1,1)
@@ -111,21 +140,21 @@ def pkl_make(modality1,modality2,modality3,modality4,label,train_id,val_id,test_
     train['modality1'] = modality1_train
     train['modality2'] = modality2_train
     train['modality3'] = modality3_train
-    train['modality4'] = modality4_train
+    # train['modality4'] = modality4_train
     train['label'] = label_train
     
     valid['id'] = id_val
     valid['modality1'] = modality1_val
     valid['modality2'] = modality2_val
     valid['modality3'] = modality3_val
-    valid['modality4'] = modality4_val
+    # valid['modality4'] = modality4_val
     valid['label'] = label_val
 
     test['id'] = id_test
     test['modality1'] = modality1_test
     test['modality2'] = modality2_test
     test['modality3'] = modality3_test
-    test['modality4'] = modality4_test
+    # test['modality4'] = modality4_test
     test['label'] = label_test
 
     pkl1['train'] = train
